@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, io::Read};
 
 /// Returns a vector of filenames in the current directory
 pub fn get_paths() -> Vec<String> {
@@ -31,4 +31,21 @@ pub fn get_files() -> Vec<(String, fs::File)> {
     }).map(|(name, f)| {
         (name.clone(), f.unwrap())
     }).collect()
+}
+
+/// Returns a vector of each unique word in a file
+pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
+    let mut contents = String::new();
+    let _ = file.clone().read_to_string(&mut contents);
+
+    let mut words: Vec<String> = Vec::new();
+    
+    for word in contents.split_ascii_whitespace() {
+        let word = String::from(word);
+        if !words.contains(&word) {
+            words.push(word);
+        }
+    }
+
+    return words;
 }
