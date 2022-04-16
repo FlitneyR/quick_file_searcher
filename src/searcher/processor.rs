@@ -102,6 +102,7 @@ pub fn get_files() -> Vec<(String, fs::File)> {
 }
 
 /// Returns a vector of each unique word in a file
+/// Removes non-alphabetic characters from each word
 pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
     let mut contents = String::new();
     let _ = file.clone().read_to_string(&mut contents);
