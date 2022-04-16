@@ -109,7 +109,11 @@ pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
     let mut words: Vec<String> = Vec::new();
     
     for word in contents.split_ascii_whitespace() {
-        let word = String::from(word);
+        let word = String::from(word)
+            .chars().filter(|c|
+                c.is_alphabetic()
+            ).collect();
+        
         if !words.contains(&word) {
             words.push(word);
         }
