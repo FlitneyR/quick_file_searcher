@@ -2,6 +2,7 @@ use std::fs;
 use std::io::Read;
 
 /// Bitmap to record which words are used in which files
+#[derive(Clone)]
 pub struct WordBitMapRow {
     bytes: Vec<u8>
 }
@@ -23,6 +24,14 @@ impl WordBitMapRow {
         }
 
         slf
+    }
+
+    /// Performs a bitwise and on each byte in the bytes vector
+    pub fn and(bm1: &WordBitMapRow, bm2: &WordBitMapRow) -> WordBitMapRow {
+        WordBitMapRow {
+            bytes: bm1.bytes.iter().zip(bm2.bytes.iter())
+                .map(|(b1, b2)| b1 & b2).collect()
+        }
     }
 
     /// Gets the value of a bit in the bitmap
