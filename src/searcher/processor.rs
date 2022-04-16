@@ -8,14 +8,15 @@ pub struct WordBitMapRow {
 
 impl WordBitMapRow {
     /// Creates a bit map row from a vector of input words and a vector of dictionary words
-    pub fn from_words_and_dict(words: Vec<String>, dict: Vec<String>) -> WordBitMapRow {
-        let bytes: Vec<u8> = vec![0 ; dict.len() / 8];
+    pub fn from_words_and_dict(words: &Vec<String>, dict: &Vec<String>) -> WordBitMapRow {
+        let bites_num = dict.len() + dict.len() % 8;
+        let bytes: Vec<u8> = vec![0 ; bites_num / 8];
         let mut slf = WordBitMapRow { bytes: bytes };
 
         for word in words {
             dict.iter()
             .position(|w|
-                *w == word
+                w == word
             ).and_then(|index|
                 Some(slf.set_bit(index, true))
             );
@@ -107,13 +108,14 @@ pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
     let mut contents = String::new();
     let _ = file.clone().read_to_string(&mut contents);
 
+    get_unique_words_from_string(&contents)
+}
+
+pub fn get_unique_words_from_string(input: &String) -> Vec<String> {
     let mut words: Vec<String> = Vec::new();
     
-    for word in contents.split_ascii_whitespace() {
-        let word = String::from(word)
-            .chars().filter(|c|
-                c.is_alphabetic()
-            ).collect();
+    for word in input.split_ascii_whitespace() {
+        let word = filter(&String::from(word));
         
         if !words.contains(&word) {
             words.push(word);
@@ -121,6 +123,14 @@ pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
     }
 
     words
+}
+
+pub fn filter(input: &String) -> String {
+    input
+    .chars()
+    .filter(|c| c.is_alphabetic())
+    .map(|c| c.to_lowercase().to_string())
+    .collect()
 }
 
 /// Returns a vector of each word in the dictionary file
