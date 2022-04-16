@@ -1,4 +1,5 @@
-use std::{fs, io::Read};
+use std::fs;
+use std::io::Read;
 
 /// Returns a vector of filenames in the current directory
 pub fn get_paths() -> Vec<String> {
@@ -47,5 +48,18 @@ pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
         }
     }
 
-    return words;
+    words
+}
+
+/// Returns a vector of each word in the dictionary file
+pub fn get_dict_words() -> Vec<String> {
+    let contents = fs::read_to_string(get_dict_path())
+        .expect("Couldn't reach words file");
+    
+    contents.lines().map(String::from).collect()
+}
+
+/// Returns the path to the words file
+pub fn get_dict_path() -> String {
+    String::from("/usr/share/dict/words")
 }
