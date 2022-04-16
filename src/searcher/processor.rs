@@ -7,6 +7,23 @@ pub struct WordBitMapRow {
 }
 
 impl WordBitMapRow {
+    /// Creates a bit map row from a vector of input words and a vector of dictionary words
+    pub fn from_words_and_dict(words: Vec<String>, dict: Vec<String>) -> WordBitMapRow {
+        let bytes: Vec<u8> = vec![0 ; dict.len() / 8];
+        let mut slf = WordBitMapRow { bytes: bytes };
+
+        for word in words {
+            dict.iter()
+            .position(|w|
+                *w == word
+            ).and_then(|index|
+                Some(slf.set_bit(index, true))
+            );
+        }
+
+        slf
+    }
+
     /// Gets the value of a bit in the bitmap
     pub fn get_bit(&self, index: usize) -> Option<bool> {
         if index >= self.bytes.len() * 8 { None } else {
