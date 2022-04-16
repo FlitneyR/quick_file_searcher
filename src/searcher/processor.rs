@@ -1,5 +1,6 @@
 use std::fs;
 
+/// Returns a vector of filenames in the current directory
 pub fn get_paths() -> Vec<String> {
     fs::read_dir("./")
         .expect("Couldn't read file system")
@@ -21,6 +22,7 @@ pub fn get_paths() -> Vec<String> {
         ).collect()
 }
 
+/// Returns a vector of pairs of file names and std::fs::File objects
 pub fn get_files() -> Vec<(String, fs::File)> {
     get_paths().iter().map(|s| {
         (s, fs::File::open(s))
