@@ -14,9 +14,9 @@ fn main() {
 
     let search_bm = WordBitMapRow::from_words_and_dict(&search_words, &dict_words);
 
-    let mut scores = score_files(&search_bm);
+    let mut scores: Vec<(String, usize, WordBitMapRow)> = score_files(&search_bm)
+        .into_iter().filter(|(_,s,_)| *s * 2 >= search_words.len()).collect();
     
-    scores = scores.into_iter().filter(|(_,s,_)| *s > 0).collect();
     scores.sort_by_cached_key(|(_, s, _)| *s);
     scores.reverse();
 
