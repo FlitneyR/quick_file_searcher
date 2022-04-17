@@ -1,17 +1,18 @@
 use std::fs;
-use std::io::Read;
+use std::io::{Read, Write};
+use itertools::Itertools;
 
 /// Bitmap to record which words are used in which files
 #[derive(Clone)]
 pub struct WordBitMapRow {
-    bytes: Vec<u8>
+    pub bytes: Vec<u8>,
 }
 
 impl WordBitMapRow {
     /// Creates a bit map row from a vector of input words and a vector of dictionary words
     pub fn from_words_and_dict(words: &Vec<String>, dict: &Vec<String>) -> WordBitMapRow {
-        let bites_num = dict.len() + dict.len() % 8;
-        let bytes: Vec<u8> = vec![0 ; bites_num / 8];
+        let bites_num = number_of_bytes(dict.len());
+        let bytes: Vec<u8> = vec![0 ; bites_num];
         let mut slf = WordBitMapRow { bytes: bytes };
 
         for word in words {
@@ -150,7 +151,94 @@ pub fn get_dict_words() -> Vec<String> {
     contents.lines().map(String::from).collect()
 }
 
+/// Returns a vector of each word in the specified dictionary file
+pub fn get_dict_words_from(path: &String) -> Vec<String> {
+    let contents = fs::read_to_string(path)
+        .expect("Couldn't reach words file");
+    
+    contents.lines().map(String::from).collect()
+}
+
 /// Returns the path to the words file
 pub fn get_dict_path() -> String {
     String::from("/usr/share/dict/words")
+}
+
+/// calculates the number of bytes needed to store a certain number of bits
+pub fn number_of_bytes(bits: usize) -> usize {
+    (bits + bits % 8) / 8
+}
+
+/// Loads a cached .srch file
+pub fn load_cache() -> Option<Vec<(String, WordBitMapRow)>> {
+    let buffer = fs::read(".srch");
+    if buffer.is_err() { return None; }
+    let buffer = buffer.unwrap();
+
+    let mut sp = buffer.split(|b| *b == b'\n');
+
+    let dict_path = String::from_utf8(sp.next().unwrap().to_vec()).unwrap();
+    let file_names: Vec<&[u8]> = sp.take_while_ref(|l| **l != []).collect();
+
+    let data = sp.nth(1).unwrap();
+
+    let dict_words_count = get_dict_words_from(&dict_path).len();
+    let file_names = file_names.iter().map(|l| {
+        String::from_utf8(l.to_vec()).unwrap()
+    });
+
+    println!("data: {} bytes", data.len());
+    
+    let bitmaps = data.chunks(number_of_bytes(dict_words_count));
+
+    println!("{} bitmaps", bitmaps.len());
+
+    Some(file_names.zip(bitmaps).map(|(name, data)| {
+        (name, WordBitMapRow { bytes: data.to_vec() })
+    }).collect())
+}
+
+/// Creates a .srch cache file in the current directory
+pub fn make_cache() -> Option<Vec<(String, WordBitMapRow)>> {
+    let dict_path = get_dict_path();
+    let dict_words = get_dict_words();
+    let mut srch_file = fs::File::create(".srch")
+        .expect("Couldn't create .srch file");
+
+    srch_file.write(dict_path.as_bytes())
+        .expect("Unable to write dict file path to .srch");
+
+    srch_file.write(&[b'\n'])
+        .expect("Unable to write new line to .srch");
+    
+    let mut data: Vec<u8> = Vec::new();
+
+    let mut output: Vec<(String, WordBitMapRow)> = Vec::new();
+
+    for (file_name, file) in get_files() {
+        srch_file.write(file_name.as_bytes())
+            .expect("Unable to write to .srch file");
+        
+        srch_file.write(&[b'\n'])
+            .expect("Unable to write new line to .srch");
+        
+        let file_words = get_unique_words_from_file(&file);
+        let bitmap = WordBitMapRow::from_words_and_dict(&file_words, &dict_words);
+        for byte in &bitmap.bytes {
+            data.write(&[*byte])
+                .expect(&*format!("Unable to write byte: {byte:?} to .srch file"));
+        }
+
+        output.push((file_name, bitmap));
+    }
+
+    srch_file.write(&[b'\n'])
+        .expect("Unable to write new line to .srch");
+
+    for byte in data {
+        srch_file.write(&[byte])
+            .expect(&*format!("Unable to write data byte: {byte}"));
+    }
+
+    Some(output)
 }
