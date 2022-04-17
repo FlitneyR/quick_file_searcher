@@ -90,7 +90,18 @@ pub fn get_dict_words_from(path: &String) -> Vec<String> {
 
 /// Returns the path to the words file
 pub fn get_dict_path() -> String {
-    String::from("/usr/share/dict/words")
+    let mut contents = fs::read_dir("./")
+        .expect("Couldn't read the contents of the current directory");
+        
+    if contents.find(|de| {
+        de.as_ref()
+            .unwrap().path()
+            .to_str().unwrap() == "./.words"
+    }).is_some() {
+        String::from("./.words")
+    } else {
+        String::from("/usr/share/dict/words")
+    }
 }
 
 /// calculates the number of bytes needed to store a certain number of bits
