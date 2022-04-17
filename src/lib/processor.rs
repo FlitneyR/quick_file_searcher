@@ -89,6 +89,8 @@ pub fn get_dict_words_from(path: &String) -> Vec<String> {
 }
 
 /// Returns the path to the words file
+/// 
+/// Trys to return .words but defaults to /usr/share/dict/words
 pub fn get_dict_path() -> String {
     let mut contents = fs::read_dir("./")
         .expect("Couldn't read the contents of the current directory");
@@ -98,7 +100,7 @@ pub fn get_dict_path() -> String {
             .unwrap().path()
             .to_str().unwrap() == "./.words"
     }).is_some() {
-        String::from("./.words")
+        String::from(".words")
     } else {
         String::from("/usr/share/dict/words")
     }
