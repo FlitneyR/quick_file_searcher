@@ -1,19 +1,26 @@
-mod searcher;
-use searcher::processor::*;
+use std::env;
+
+mod lib;
+
+use lib::processor::*;
+use lib::searcher::*;
+use lib::bitmap::*;
 
 fn main() {
-    let cache1 = make_cache()
-        .expect("Couldn't save a cache");
+    let search_words: Vec<String> = env::args().map(|s| String::from(s)).collect();
+    let search_words: Vec<String> = search_words[2..].to_vec();
 
-    let cache2 = load_cache()
-        .expect("Couldn't load a cache");
+    let dict_words = get_dict_words();
 
-    println!("cache1 length: {}, cache2 length: {}", cache1.len(), cache2.len());
+    let search_bm = WordBitMapRow::from_words_and_dict(&search_words, &dict_words);
 
-    for ((name1, bm1), (name2, bm2)) in cache1.iter().zip(cache2.iter()) {
-        println!("{name1}, {name2}");
-        for (b1, b2) in bm1.bytes.iter().zip(bm2.bytes.iter()) {
-            if b1 != b2 { println!("Mismatched bytes: {b1} and {b2}") }
-        }
+    let mut scores = score_files(&search_bm);
+    
+    scores = scores.into_iter().filter(|(_,s,_)| *s > 0).collect();
+    scores.sort_by_cached_key(|(_, s, _)| *s);
+    scores.reverse();
+
+    for (name, matches, _) in scores {
+        println!("{name} contains {matches} matches");
     }
 }
