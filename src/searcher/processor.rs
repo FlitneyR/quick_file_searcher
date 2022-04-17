@@ -121,6 +121,8 @@ pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
     get_unique_words_from_string(&contents)
 }
 
+/// Returns the unique words in a string
+/// i.e. the words in a string in the order they appear first
 pub fn get_unique_words_from_string(input: &String) -> Vec<String> {
     let mut words: Vec<String> = Vec::new();
     
@@ -135,6 +137,7 @@ pub fn get_unique_words_from_string(input: &String) -> Vec<String> {
     words
 }
 
+/// Removes non-alphabetic characters and moves everything to lower case
 pub fn filter(input: &String) -> String {
     input
     .chars()
