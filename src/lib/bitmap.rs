@@ -2,32 +2,32 @@ use crate::*;
 
 /// Bitmap to record which words are used in which files
 #[derive(Clone)]
-pub struct WordBitMapRow {
+pub struct WordsBitMap {
     pub bytes: Vec<u8>,
 }
 
-impl WordBitMapRow {
+impl WordsBitMap {
     /// Creates a bit map row from a vector of input words and a vector of dictionary words
-    pub fn from_words_and_dict(words: &Vec<String>, dict: &Vec<String>) -> WordBitMapRow {
-        let bites_num = number_of_bytes(dict.len());
-        let bytes: Vec<u8> = vec![0 ; bites_num];
-        let mut slf = WordBitMapRow { bytes: bytes };
+    pub fn from_words_and_dict(words: &Vec<String>, dict: &Vec<String>) -> WordsBitMap {
+        let bytes_num = number_of_bytes(dict.len());
+        let bytes: Vec<u8> = vec![0 ; bytes_num];
+        let mut bm = WordsBitMap { bytes: bytes };
 
-        for word in words {
+        for word in words.iter().map(|w| filter(w)) {
             dict.iter()
             .position(|w|
-                w == word
-            ).and_then(|index|
-                Some(slf.set_bit(index, true))
-            );
+                *w == word
+            ).and_then(|index| Some(
+                bm.set_bit(index, true)
+            ));
         }
 
-        slf
+        bm
     }
 
     /// Performs a bitwise and on each byte in the bytes vector
-    pub fn and(bm1: &WordBitMapRow, bm2: &WordBitMapRow) -> WordBitMapRow {
-        WordBitMapRow {
+    pub fn and(bm1: &WordsBitMap, bm2: &WordsBitMap) -> WordsBitMap {
+        WordsBitMap {
             bytes: bm1.bytes.iter().zip(bm2.bytes.iter())
                 .map(|(b1, b2)| b1 & b2).collect()
         }
@@ -35,15 +35,15 @@ impl WordBitMapRow {
 
     /// Gets the value of a bit in the bitmap
     pub fn get_bit(&self, index: usize) -> Option<bool> {
-        if index >= self.bytes.len() * 8 { None } else {
-            let bit = index % 8;
+        if index >= self.bytes.len() * 8 { return None }
 
-            self
-            .get_byte(index / 8)
-            .and_then(|byte|
-                Some(byte & (1 << bit) > 0)
-            )
-        }
+        let (byte, bit) = bit_address(index);
+
+        self
+        .get_byte(byte)
+        .and_then(|byte|
+            Some(byte & (1 << bit) > 0)
+        )
     }
 
     /// Sets the value of a bit in the bitmap
@@ -77,4 +77,8 @@ impl WordBitMapRow {
             true
         }
     }
+}
+
+pub fn bit_address(index: usize) -> (usize, u8) {
+    (index / 8, index as u8 % 8)
 }

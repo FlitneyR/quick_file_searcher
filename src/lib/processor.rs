@@ -51,8 +51,8 @@ pub fn get_unique_words_from_file(file: &fs::File) -> Vec<String> {
 /// The words in a string in the order they appear first
 pub fn get_unique_words_from_string(input: &String) -> Vec<String> {
     let mut words: Vec<String> = Vec::new();
-    
-    for word in input.split_ascii_whitespace() {
+
+    for word in input.split_whitespace() {
         let word = filter(&String::from(word));
         
         if !words.contains(&word) {
@@ -66,26 +66,23 @@ pub fn get_unique_words_from_string(input: &String) -> Vec<String> {
 /// Removes non-alphabetic characters and moves everything to lower case
 pub fn filter(input: &String) -> String {
     input
-    .chars()
-    .filter(|c| c.is_alphabetic())
-    .map(|c| c.to_lowercase().to_string())
-    .collect()
+        .chars()
+        .filter(|c| c.is_alphabetic())
+        .map(|c| c.to_lowercase().to_string())
+        .collect()
 }
 
 /// Returns a vector of each word in the dictionary file
-pub fn get_dict_words() -> Vec<String> {
-    let contents = fs::read_to_string(get_dict_path())
-        .expect("Couldn't reach words file");
-    
-    contents.lines().map(String::from).collect()
+pub fn get_dict_words() -> Option<Vec<String>> {
+    get_dict_words_from(&get_dict_path())
 }
 
 /// Returns a vector of each word in the specified dictionary file
-pub fn get_dict_words_from(path: &String) -> Vec<String> {
-    let contents = fs::read_to_string(path)
-        .expect("Couldn't reach words file");
-    
-    contents.lines().map(String::from).collect()
+pub fn get_dict_words_from(path: &String) -> Option<Vec<String>> {
+    fs::read_to_string(path).ok()
+        .and_then(|file| Some(
+            file.lines().map(String::from).collect()
+        ))
 }
 
 /// Returns the path to the words file
@@ -112,9 +109,9 @@ pub fn number_of_bytes(bits: usize) -> usize {
 }
 
 /// Creates a .srch cache file in the current directory
-pub fn make_cache() -> Option<Vec<(String, WordBitMapRow)>> {
+pub fn make_cache() -> Option<Vec<(String, WordsBitMap)>> {
     let dict_path = get_dict_path();
-    let dict_words = get_dict_words();
+    let dict_words = get_dict_words()?;
     let mut srch_file = fs::File::create(".srch")
         .expect("Couldn't create .srch file");
 
@@ -126,7 +123,7 @@ pub fn make_cache() -> Option<Vec<(String, WordBitMapRow)>> {
     
     let mut data: Vec<u8> = Vec::new();
 
-    let mut output: Vec<(String, WordBitMapRow)> = Vec::new();
+    let mut output: Vec<(String, WordsBitMap)> = Vec::new();
 
     for (file_name, file) in get_files() {
         srch_file.write(file_name.as_bytes())
@@ -136,7 +133,7 @@ pub fn make_cache() -> Option<Vec<(String, WordBitMapRow)>> {
             .expect("Unable to write new line to .srch");
         
         let file_words = get_unique_words_from_file(&file);
-        let bitmap = WordBitMapRow::from_words_and_dict(&file_words, &dict_words);
+        let bitmap = WordsBitMap::from_words_and_dict(&file_words, &dict_words);
         for byte in &bitmap.bytes {
             data.write(&[*byte])
                 .expect(&*format!("Unable to write byte: {byte:?} to .srch file"));

@@ -1,4 +1,5 @@
 use std::env;
+use std::process::exit;
 
 mod lib;
 
@@ -8,19 +9,38 @@ use lib::bitmap::*;
 
 fn main() {
     let search_words: Vec<String> = env::args().map(|s| String::from(s)).collect();
-    let search_words: Vec<String> = search_words[2..].to_vec();
+    let search_words = search_words[1..].to_vec();
 
-    let dict_words = get_dict_words();
+    let dict_words = get_dict_words()
+        .unwrap_or_else(|| {
+            println!("Couldn't get access to dictionary file: {}", get_dict_path());
+            exit(1);
+        });
 
-    let search_bm = WordBitMapRow::from_words_and_dict(&search_words, &dict_words);
+    let search_bm = WordsBitMap::from_words_and_dict(&search_words, &dict_words);
 
-    let mut scores: Vec<(String, usize, WordBitMapRow)> = score_files(&search_bm)
+    let search_cache = load_cache() 
+        .unwrap_or_else(|| {
+            println!("Couldn't load a .srch cache file");
+            println!("Attempting to create one");
+            let temp = make_cache();
+
+            if temp.is_none() {
+                println!("Unable to create a .srch cache file");
+                exit(1);
+            }
+
+            println!("Successfully created a .srch file");
+            temp.unwrap()
+        });
+
+    let mut scores: Vec<(String, usize, WordsBitMap)> = score_files(&search_bm, &search_cache)
         .into_iter().filter(|(_,s,_)| *s * 2 >= search_words.len()).collect();
     
     scores.sort_by_cached_key(|(_, s, _)| *s);
     scores.reverse();
 
-    for (name, matches, _) in scores {
+    for (name, matches, bm) in scores {
         println!("{name} contains {matches} matches");
     }
 }
