@@ -1,32 +1,10 @@
-use std::fs;
-use itertools::Itertools;
-
-use crate::*;
 use crate::lib::bitmap::*;
 
+use savefile::prelude::*;
+
 /// Loads a cached .srch file
-pub fn load_cache() -> Option<Vec<(String, WordsBitMap)>> {
-    let buffer = fs::read(".srch");
-    if buffer.is_err() { return None; }
-    let buffer = buffer.unwrap();
-
-    let mut sp = buffer.split(|b| *b == b'\n');
-
-    let dict_path = String::from_utf8(sp.next().unwrap().to_vec()).unwrap();
-    let file_names: Vec<&[u8]> = sp.take_while_ref(|l| **l != []).collect();
-
-    let data = sp.nth(1).unwrap();
-
-    let dict_words_count = get_dict_words_from(&dict_path)?.len();
-    let file_names = file_names.iter().map(|l| {
-        String::from_utf8(l.to_vec()).unwrap()
-    });
-    
-    let bitmaps = data.chunks(number_of_bytes(dict_words_count));
-
-    Some(file_names.zip(bitmaps).map(|(name, data)| {
-        (name, WordsBitMap { bytes: data.to_vec() })
-    }).collect())
+pub fn load_cache() -> Option<Cache> {
+    load_file(".srch", 0).ok()
 }
 
 /// Compares bitmaps for matching bits
@@ -58,4 +36,13 @@ pub fn score_files(search_bm: &WordsBitMap, cache: &Vec<(String, WordsBitMap)>) 
         let (matches, match_bm) = matches(&file_bm, &search_bm);
         (name.clone(), matches, match_bm)
     }).collect()
+}
+
+impl Cache {
+    pub fn score_files(&self, search_bm: &WordsBitMap) -> Vec<(String, usize, WordsBitMap)> {
+        let cache = self.file_names.iter().zip(self.bitmaps.iter())
+            .map(|(n, bm)| (n.clone(), bm.clone())).collect();
+
+        score_files(search_bm, &cache)
+    }
 }

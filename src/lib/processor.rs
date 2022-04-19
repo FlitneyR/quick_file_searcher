@@ -1,5 +1,7 @@
 use std::fs;
-use std::io::{Read, Write};
+use std::io::Read;
+
+use savefile::prelude::*;
 
 use crate::lib::bitmap::*;
 
@@ -109,46 +111,27 @@ pub fn number_of_bytes(bits: usize) -> usize {
 }
 
 /// Creates a .srch cache file in the current directory
-pub fn make_cache() -> Option<Vec<(String, WordsBitMap)>> {
+pub fn make_cache() -> Option<Cache> {
     let dict_path = get_dict_path();
-    let dict_words = get_dict_words()?;
-    let mut srch_file = fs::File::create(".srch")
-        .expect("Couldn't create .srch file");
+    let dict_words = get_dict_words_from(&dict_path)?;
 
-    srch_file.write(dict_path.as_bytes())
-        .expect("Unable to write dict file path to .srch");
+    let file_names = get_paths();
 
-    srch_file.write(&[b'\n'])
-        .expect("Unable to write new line to .srch");
-    
-    let mut data: Vec<u8> = Vec::new();
+    let bitmaps = file_names.iter().map(|file_name| {
+        fs::read_to_string(file_name).ok().and_then(|file_contents| {
+            let file_words = get_unique_words_from_string(&file_contents);
+            Some(WordsBitMap::from_words_and_dict(&file_words, &dict_words))
+        })
+    }).filter(|bm| bm.is_some())
+    .map(|bm| bm.unwrap()).collect();
 
-    let mut output: Vec<(String, WordsBitMap)> = Vec::new();
+    let cache = Cache {
+        dict_path: dict_path,
+        file_names: file_names,
+        bitmaps: bitmaps,
+    };
 
-    for (file_name, file) in get_files() {
-        srch_file.write(file_name.as_bytes())
-            .expect("Unable to write to .srch file");
-        
-        srch_file.write(&[b'\n'])
-            .expect("Unable to write new line to .srch");
-        
-        let file_words = get_unique_words_from_file(&file);
-        let bitmap = WordsBitMap::from_words_and_dict(&file_words, &dict_words);
-        for byte in &bitmap.bytes {
-            data.write(&[*byte])
-                .expect(&*format!("Unable to write byte: {byte:?} to .srch file"));
-        }
+    save_file(".srch", 0, &cache).unwrap();
 
-        output.push((file_name, bitmap));
-    }
-
-    srch_file.write(&[b'\n'])
-        .expect("Unable to write new line to .srch");
-
-    for byte in data {
-        srch_file.write(&[byte])
-            .expect(&*format!("Unable to write data byte: {byte}"));
-    }
-
-    Some(output)
+    Some(cache)
 }

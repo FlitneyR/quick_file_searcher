@@ -34,13 +34,14 @@ fn main() {
             temp.unwrap()
         });
 
-    let mut scores: Vec<(String, usize, WordsBitMap)> = score_files(&search_bm, &search_cache)
-        .into_iter().filter(|(_,s,_)| *s * 2 >= search_words.len()).collect();
+    let mut scores = search_cache.score_files(&search_bm)
+        .into_iter().filter(|(_,s,_)| *s * 2 >= search_words.len())
+        .collect::<Vec<(String, usize, WordsBitMap)>>();
     
     scores.sort_by_cached_key(|(_, s, _)| *s);
     scores.reverse();
 
-    for (name, matches, bm) in scores {
+    for (name, matches, _bm) in scores {
         println!("{name} contains {matches} matches");
     }
 }

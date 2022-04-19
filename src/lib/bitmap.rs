@@ -1,9 +1,53 @@
 use crate::*;
 
+use savefile::prelude::*;
+use savefile_derive::*;
+
 /// Bitmap to record which words are used in which files
 #[derive(Clone)]
 pub struct WordsBitMap {
     pub bytes: Vec<u8>,
+}
+
+impl WithSchema for WordsBitMap {
+    fn schema(_version: u32) -> Schema {
+        Schema::Vector(Box::new(
+            Schema::Primitive(
+                SchemaPrimitive::schema_u8
+            )
+        ))
+    }
+}
+
+impl Serialize for WordsBitMap {
+    fn serialize(&self, serializer: &mut Serializer) -> Result<(), SavefileError> {
+        self.bytes.serialize(serializer)
+    }
+}
+
+impl Deserialize for WordsBitMap {
+    fn deserialize(deserializer: &mut Deserializer) -> Result<Self, SavefileError> {
+        Ok(WordsBitMap {
+            bytes: Vec::<u8>::deserialize(deserializer)?
+        })
+    }
+}
+
+impl Introspect for WordsBitMap {
+    fn introspect_value(&self) -> String {
+        format!("WordsBitMap of {} bits", self.bytes.len() * 8)
+    }
+
+    fn introspect_child<'a>(&'a self, _index: usize) -> Option<Box<dyn IntrospectItem<'a> + 'a>> {
+        None
+    }
+}
+
+#[derive(Savefile)]
+pub struct Cache {
+    pub dict_path: String,
+    pub file_names: Vec<String>,
+    pub bitmaps: Vec<WordsBitMap>,
 }
 
 impl WordsBitMap {
