@@ -1,5 +1,3 @@
-#!sh
-
 rm /usr/local/bin/search
 
 cargo build --release
