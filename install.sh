@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!sh
 
 rm /usr/local/bin/search
 
