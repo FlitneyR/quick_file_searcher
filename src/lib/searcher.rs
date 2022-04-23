@@ -1,6 +1,6 @@
-use crate::lib::bitmap::*;
-
 use savefile::prelude::*;
+
+use crate::bitmap::*;
 
 /// Loads a cached .srch file
 pub fn load_cache() -> Option<Cache> {

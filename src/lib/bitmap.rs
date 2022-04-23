@@ -1,7 +1,7 @@
-use crate::*;
-
 use savefile::prelude::*;
 use savefile_derive::*;
+
+use crate::processor::*;
 
 /// Bitmap to record which words are used in which files
 #[derive(Clone)]

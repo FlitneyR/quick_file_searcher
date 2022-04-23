@@ -3,7 +3,7 @@ use std::io::Read;
 
 use savefile::prelude::*;
 
-use crate::lib::bitmap::*;
+use crate::bitmap::*;
 
 /// Returns a vector of filenames in the current directory
 pub fn get_paths() -> Vec<String> {
@@ -66,9 +66,17 @@ pub fn get_unique_words_from_string(input: &String) -> Vec<String> {
 }
 
 /// Removes non-alphabetic characters and moves everything to lower case
+/// 
+/// ```
+/// # use lib::processor::filter;
+/// 
+/// let input_string = "Let's".to_string();
+/// let expected_string = "lets".to_string();
+/// let output_string = filter(&input_string);
+/// assert_eq!(expected_string, output_string);
+/// ```
 pub fn filter(input: &String) -> String {
-    input
-        .chars()
+    input.chars()
         .filter(|c| c.is_alphabetic())
         .map(|c| c.to_lowercase().to_string())
         .collect()

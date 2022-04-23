@@ -1,8 +1,6 @@
 use std::env;
 use std::process::exit;
 
-mod lib;
-
 use lib::processor::*;
 use lib::searcher::*;
 use lib::bitmap::*;

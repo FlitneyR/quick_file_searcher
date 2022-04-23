@@ -1,7 +1,15 @@
 [package]
-name = "searcher"
+name = "quick_file_searcher"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+name = "lib"
+path = "src/lib/mod.rs"
+test = true
+doctest = true
+doc = true
+crate-type = ["lib"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
